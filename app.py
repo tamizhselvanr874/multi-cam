@@ -47,6 +47,8 @@ if 'analysis_cache' not in st.session_state:
     st.session_state.analysis_cache = {}
 if 'last_refresh' not in st.session_state:
     st.session_state.last_refresh = time.time()
+if 'needs_rerun' not in st.session_state:
+    st.session_state.needs_rerun = False
 
 # Helper Functions
 def capture_frame():
@@ -293,7 +295,7 @@ with tab2:
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            st.image(image_data, caption=current_blob, use_container_width=True)  
+            st.image(image_data, caption=current_blob, use_container_width=True)
         
         with col2:
             st.subheader("Image Analysis")
@@ -351,7 +353,7 @@ with tab2:
             st.write(recommendation)
             
             # Option to reanalyze if needed
-            if st.button("Reanalyze This Image"):
+            if st.button("Reanalyze This Image", key=f"reanalyze_{current_blob}"):
                 with st.spinner("Reanalyzing image..."):
                     analysis_result = analyze_image_with_vision(image_data)
                     st.session_state.analysis_cache[analysis_key] = analysis_result
@@ -369,7 +371,7 @@ with tab2:
                                 "recommendation": recommendation,
                                 "raw_analysis": analysis_result
                             }
-                    st.experimental_rerun()
+                    st.session_state.needs_rerun = True
         
         # Display log
         st.subheader("Security Insights Log")
@@ -379,7 +381,8 @@ with tab2:
         with col1:
             filter_threat = st.selectbox(
                 "Filter by threat level:",
-                ["All", "SAFE", "LOW RISK", "MEDIUM RISK", "HIGH RISK"]
+                ["All", "SAFE", "LOW RISK", "MEDIUM RISK", "HIGH RISK"],
+                key="threat_filter"
             )
         
         # Apply filters
@@ -409,13 +412,14 @@ with tab2:
                     image_index = st.session_state.captured_images.index(entry['image']) if entry['image'] in st.session_state.captured_images else -1
                     if image_index >= 0 and st.button(f"View this image", key=f"btn_{entry['image']}"):
                         st.session_state.current_index = image_index
-                        st.experimental_rerun()
+                        st.session_state.needs_rerun = True
         else:
             st.info("No log entries match the selected filters")
     else:
         st.warning("No images found in storage")
 
 # Add automatic refresh by rerunning the script periodically
-if time.time() - st.session_state.last_refresh > refresh_interval:
+if (time.time() - st.session_state.last_refresh > refresh_interval) or st.session_state.needs_rerun:
     st.session_state.last_refresh = time.time()
+    st.session_state.needs_rerun = False
     st.experimental_rerun()
