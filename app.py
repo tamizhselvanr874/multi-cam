@@ -293,7 +293,7 @@ with tab2:
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            st.image(image_data, caption=current_blob, use_column_width=True)
+            st.image(image_data, caption=current_blob, use_container_width=True)  
         
         with col2:
             st.subheader("Image Analysis")
